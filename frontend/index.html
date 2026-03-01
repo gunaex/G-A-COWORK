@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>G-A-COWORK PRO — Gemini Agentic Workspace</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Phase 2 Additional Styles */
+    .security-gate {
+      background: rgba(244, 196, 48, 0.05);
+      border: 1px solid rgba(244, 196, 48, 0.2);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+
+    .gate-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .gate-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent3);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 34px;
+      height: 18px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--border2);
+      transition: .4s;
+      border-radius: 18px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 2px;
+      bottom: 2px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked+.slider {
+      background-color: var(--accent);
+    }
+
+    input:checked+.slider:before {
+      transform: translateX(16px);
+    }
+
+    .gate-label {
+      font-size: 11px;
+      color: var(--text2);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Activity Log Styles */
+    .activity-section {
+      flex: 1.5;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+    }
+
+    .log-table-container {
+      flex: 1;
+      overflow-y: auto;
+      background: #0a0a14;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-top: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+    }
+
+    th {
+      text-align: left;
+      padding: 8px;
+      background: var(--surface2);
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+    }
+
+    td {
+      padding: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      color: var(--text2);
+    }
+
+    .status-badge {
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 9px;
+      font-weight: 600;
+    }
+
+    .status-pending {
+      background: rgba(244, 196, 48, 0.1);
+      color: var(--accent3);
+    }
+
+    .status-completed {
+      background: rgba(62, 207, 142, 0.1);
+      color: var(--success);
+    }
+
+    .status-rejected {
+      background: rgba(245, 101, 101, 0.1);
+      color: var(--danger);
+    }
+
+    /* Modal Styles */
+    .modal {
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+
+    .modal-content {
+      background: var(--surface);
+      border: 1.5px solid var(--accent);
+      padding: 24px;
+      border-radius: 12px;
+      width: 400px;
+      max-width: 90%;
+      box-shadow: 0 0 50px rgba(79, 134, 247, 0.2);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .modal-icon {
+      font-size: 24px;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .modal-body {
+      font-size: 14px;
+      margin-bottom: 24px;
+      color: var(--text2);
+      line-height: 1.5;
+    }
+
+    .modal-footer {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn-allow {
+      background: var(--success) !important;
+      color: white !important;
+      flex: 1;
+    }
+
+    .btn-block {
+      background: var(--danger) !important;
+      color: white !important;
+      flex: 1;
+    }
+
+    .args-code {
+      background: #000;
+      color: var(--accent2);
+      padding: 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      margin-top: 10px;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <span class="logo-text">G-A-COWORK PRO</span>
+      <span class="logo-sub">Phase 2: Master Controller</span>
+    </div>
+    <div class="status-bar">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">Ready</span>
+      <span class="divider">·</span>
+      <span id="iterLabel" class="iter-badge" style="display:none">Iter 0</span>
+      <span class="divider">·</span>
+      <span id="backendStatus" class="backend-badge offline">Offline</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-label">Security Gate</div>
+        <div class="security-gate">
+          <div class="gate-header">
+            <span class="gate-title">🛡️ HITL Protection</span>
+            <label class="switch">
+              <input type="checkbox" id="autoAllowToggle">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="gate-label">
+            <span>Manual Approval Mode</span>
+          </div>
+          <div class="gate-header" style="margin-top:10px">
+            <span class="gate-title" style="font-size:9px">🔔 Telegram Notifications</span>
+            <label class="switch">
+              <input type="checkbox" id="telegramToggle">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <p style="font-size:10px;color:var(--muted);margin-top:6px">Requires permission for risky actions
+            (organize_file, write_file).</p>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Task Runner</div>
+        <div class="task-input-area">
+          <textarea class="task-input" id="taskInput"
+            placeholder="Enter task (e.g., Read inbound files and organize them)"></textarea>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-primary" id="runBtn" onclick="runAgent()" style="flex:2">▶ Run</button>
+            <button class="btn btn-ghost" onclick="clearHistory()" style="flex:1; font-size:10px;">New Session</button>
+          </div>
+          <button class="btn btn-ghost btn-sm" id="stopBtn" onclick="stopAgent()"
+            style="display:none; color:var(--error); margin-top:8px;">⏹ Stop Agent</button>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Available Tools</div>
+        <div class="tools-list">
+          <div class="tool-item active"><span class="tool-icon">🔍</span><span class="tool-name">Web Search</span>
+            <div class="tool-status on"></div>
+          </div>
+          <div class="tool-item active"><span class="tool-icon">💻</span><span class="tool-name">Code Sandbox</span>
+            <div class="tool-status on"></div>
+          </div>
+          <div class="tool-item active"><span class="tool-icon">📂</span><span class="tool-name">File Manager</span>
+            <div class="tool-status on"></div>
+          </div>
+          <div class="tool-item active"><span class="tool-icon">🗂️</span><span class="tool-name">HITL Organizer</span>
+            <div class="tool-status on"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">API Configuration</div>
+        <input class="api-key-input" type="password" id="apiKeyInput" placeholder="Google Gemini 2.0 API Key" />
+      </div>
+    </aside>
+
+    <!-- AGENT TRACE -->
+    <div class="agent-panel">
+      <div class="agent-header">
+        <span class="agent-title">Agent Trace · <span id="traceTitle">Idle</span></span>
+        <button class="btn btn-ghost btn-sm" onclick="clearTrace()">Clear</button>
+      </div>
+      <div class="agent-trace" id="agentTrace">
+        <!-- Empty state -->
+        <div class="empty-state" id="emptyState">
+          <div class="empty-icon">🤖</div>
+          <div class="empty-title">PRO Controller Ready</div>
+          <p>G-A-COWORK PRO is equipped with Phase 2 capabilities: Human-in-the-loop, Self-Reflection, and Memory
+            Management.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: OUTPUT & LOGS -->
+    <div class="output-panel">
+      <div class="output-header">
+        <div class="output-tabs">
+          <div class="tab active" onclick="switchTab('output', this)">Output</div>
+          <div class="tab" id="logTab" onclick="switchTab('logs', this)">Logs</div>
+        </div>
+        <span id="stepCount">0 steps</span>
+      </div>
+
+      <div class="output-content" id="outputContent">
+        <div class="output-placeholder">Run a task to see the final result.</div>
+      </div>
+
+      <!-- Phase 2 Activity Log Table -->
+      <div class="activity-section" id="logsContent" style="display:none; padding:12px">
+        <div class="sidebar-label">Activity Log (Real-time)</div>
+        <div class="log-table-container">
+          <table id="logTable">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Action</th>
+                <th>Auth</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="logBody"></tbody>
+          </table>
+        </div>
+        <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="fetchRecentLogs()">Refesh Logs</button>
+      </div>
+
+      <div class="metrics">
+        <div class="metric">
+          <div class="metric-val" id="metricSteps">0</div>
+          <div class="metric-label">Steps</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val" id="metricIter">0</div>
+          <div class="metric-label">Iterations</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val" id="metricTokens">0</div>
+          <div class="metric-label">Tokens</div>
+        </div>
+        <div class="metric">
+          <div class="metric-val" id="metricTime">0s</div>
+          <div class="metric-label">Elapsed</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Approval Modal -->
+  <div id="approvalModal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span class="modal-icon">⚠️</span>
+        <span class="modal-title">Approval Required</span>
+      </div>
+      <div class="modal-body">
+        <p>The AI is requesting permission to execute a potentially risky action:</p>
+        <div style="margin:12px 0; font-weight:600; color:var(--accent)">Tool: <span id="pendingTool"></span></div>
+        <p>Details:</p>
+        <div id="pendingArgs" class="args-code"></div>
+      </div>
+      <div class="modal-footer">
+        <button id="approveBtn" class="btn btn-primary btn-allow" onclick="sendApproval('APPROVED')">Allow
+          Action</button>
+        <button id="rejectBtn" class="btn btn-ghost btn-block" onclick="sendApproval('REJECTED')">Block Action</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const BACKEND_URL = (!window.location.hostname || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:3000' : `http://${window.location.hostname}:3000`;
+    let stepCount = 0, startTime = null, timerInterval = null, iterCount = 0, totalTokens = 0, isRunning = false, currentLogId = null;
+    let chatHistory = []; // Persistent history across multiple "Run" calls
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadApiKey();
+      checkBackend();
+      fetchRecentLogs();
+      setInterval(checkBackend, 10000);
+    });
+
+    async function checkBackend() {
+      try {
+        const r = await fetch(`${BACKEND_URL}/health`, { signal: AbortSignal.timeout(3000) });
+        const data = await r.json();
+        const badge = document.getElementById('backendStatus');
+        badge.textContent = 'Online';
+        badge.className = 'backend-badge online';
+      } catch {
+        const badge = document.getElementById('backendStatus');
+        badge.textContent = 'Offline';
+        badge.className = 'backend-badge offline';
+      }
+    }
+
+    function loadApiKey() {
+      const key = localStorage.getItem('ga_cowork_api_key');
+      if (key) document.getElementById('apiKeyInput').value = key;
+    }
+
+    function switchTab(tab, el) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById('outputContent').style.display = tab === 'output' ? 'block' : 'none';
+      document.getElementById('logsContent').style.display = tab === 'logs' ? 'flex' : 'none';
+    }
+
+    async function runAgent() {
+      const apiKey = document.getElementById('apiKeyInput').value.trim();
+      const message = document.getElementById('taskInput').value.trim();
+      const autoAllow = document.getElementById('autoAllowToggle').checked;
+      const telegramEnabled = document.getElementById('telegramToggle').checked;
+
+      if (!apiKey || !message) { alert('API Key and Task required'); return; }
+      localStorage.setItem('ga_cowork_api_key', apiKey);
+
+      // Keep trace if history exists
+      if (chatHistory.length === 0) {
+        clearTrace();
+      }
+      isRunning = true;
+      document.getElementById('runBtn').disabled = true;
+      document.getElementById('stopBtn').style.display = 'flex';
+      document.getElementById('traceTitle').textContent = message.slice(0, 50);
+      setStatus('Running', 'running');
+
+      startTime = Date.now();
+      timerInterval = setInterval(() => {
+        document.getElementById('metricTime').textContent = ((Date.now() - startTime) / 1000).toFixed(1) + 's';
+      }, 100);
+
+      addTraceStep('user', 'Objective', message);
+
+      try {
+        const response = await fetch(`${BACKEND_URL}/chat/stream`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message,
+            apiKey,
+            autoAllow,
+            telegramEnabled,
+            history: chatHistory // Send existing turns
+          })
+        });
+
+        // Add user turn to history IMMEDIATELY
+        chatHistory.push({ role: 'user', parts: [{ text: message }] });
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (isRunning) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop();
+
+          let currentEvent = null;
+          for (const line of lines) {
+            if (line.startsWith('event: ')) currentEvent = line.slice(7).trim();
+            else if (line.startsWith('data: ') && currentEvent) {
+              try { handleEvent(currentEvent, JSON.parse(line.slice(6))); currentEvent = null; } catch { }
+            }
+          }
+        }
+      } catch (err) {
+        addTraceStep('error', 'Error', err.message);
+      } finally {
+        finishRun('done');
+      }
+    }
+
+    function handleEvent(event, data) {
+      switch (event) {
+        case 'thinking_start':
+          iterCount = data.iteration;
+          document.getElementById('metricIter').textContent = iterCount;
+          document.getElementById('iterLabel').textContent = `Iter ${iterCount}`;
+          document.getElementById('iterLabel').style.display = 'inline-block';
+          addThinkingStep();
+          break;
+        case 'reasoning':
+          removeThinkingStep();
+          stepCount++; updateMetrics();
+          addTraceStep('thinking', 'Gemini Thinking', `<div style="white-space:pre-wrap">${data.text}</div>`);
+          if (data.tokens) totalTokens = data.tokens; updateMetrics();
+
+          // Append to history
+          chatHistory.push({ role: 'model', parts: [{ text: data.text }] });
+          break;
+        case 'tool_call':
+          removeThinkingStep();
+          stepCount++; updateMetrics();
+          addTraceStep('tool', `Tool Call: ${data.tool}`, `<pre class="args-code">${JSON.stringify(data.args, null, 2)}</pre>`);
+
+          // Append to history
+          chatHistory.push({ role: 'model', parts: [{ functionCall: { name: data.tool, args: data.args } }] });
+          break;
+        case 'tool_result':
+          stepCount++; updateMetrics();
+          addTraceStep('result', `Result: ${data.tool}`, `<pre style="font-size:11px;color:var(--success)">${data.result}</pre>`);
+
+          // Append to history
+          chatHistory.push({ role: 'user', parts: [{ functionResponse: { name: data.tool, response: { output: data.result } } }] });
+
+          fetchRecentLogs();
+          break;
+        case 'REQUIRE_APPROVAL':
+          currentLogId = data.logId;
+          document.getElementById('pendingTool').textContent = data.tool;
+          document.getElementById('pendingArgs').textContent = JSON.stringify(data.args, null, 2);
+          document.getElementById('approvalModal').style.display = 'flex';
+          break;
+        case 'complete':
+          removeThinkingStep();
+          totalTokens = data.totalTokens || totalTokens; updateMetrics();
+          document.getElementById('outputContent').innerHTML = `<div class="final-text">${data.text}</div>`;
+
+          // Add model response to history
+          chatHistory.push({ role: 'model', parts: [{ text: data.text }] });
+
+          finishRun('done');
+          break;
+        case 'error':
+          removeThinkingStep();
+          addTraceStep('error', 'Error', data.message);
+          finishRun('error');
+          break;
+      }
+    }
+
+    async function sendApproval(decision) {
+      document.getElementById('approvalModal').style.display = 'none';
+      try {
+        await fetch(`${BACKEND_URL}/chat/approve`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ logId: currentLogId, decision })
+        });
+        addTraceStep('user', 'User Decision', `Security Gate: ${decision}`);
+      } catch (err) {
+        console.error('Approval failed:', err);
+      }
+    }
+
+    async function fetchRecentLogs() {
+      try {
+        const r = await fetch(`${BACKEND_URL}/logs`);
+        const logs = await r.json();
+        const body = document.getElementById('logBody');
+        body.innerHTML = logs.reverse().map(l => `
+            <tr>
+                <td>${l.timestamp.split(' ').pop()}</td>
+                <td>${l.action}</td>
+                <td>${l.authorizedBy}</td>
+                <td><span class="status-badge status-${l.status.toLowerCase().split(' ')[0]}">${l.status}</span></td>
+            </tr>
+        `).join('');
+      } catch { }
+    }
+
+    function clearHistory() {
+      chatHistory = [];
+      clearTrace();
+    }
+
+    function clearTrace() {
+      const trace = document.getElementById('agentTrace');
+      trace.innerHTML = '<div id="emptyState" class="empty-state">No agent activity logged yet. Start a task.</div>';
+      document.getElementById('outputContent').innerHTML = '<div class="output-placeholder">Run a task to see result.</div>';
+      stepCount = 0; iterCount = 0; totalTokens = 0;
+      updateMetrics();
+      document.getElementById('iterLabel').style.display = 'none';
+    }
+
+    function updateMetrics() {
+      document.getElementById('metricSteps').textContent = stepCount;
+      document.getElementById('metricIter').textContent = iterCount;
+      document.getElementById('metricTokens').textContent = totalTokens > 1000 ? (totalTokens / 1000).toFixed(1) + 'k' : totalTokens;
+    }
+
+    function addTraceStep(type, label, content) {
+      const trace = document.getElementById('agentTrace');
+      if (document.getElementById('emptyState')) document.getElementById('emptyState').remove();
+      const div = document.createElement('div');
+      div.className = 'trace-step fade-in';
+      div.innerHTML = `
+        <div class="step-connector">
+            <div class="step-dot ${type}"></div>
+            <div class="step-line"></div>
+        </div>
+        <div class="step-content">
+            <div class="step-label ${type}">${label}</div>
+            <div class="step-card">${content}</div>
+        </div>`;
+      trace.appendChild(div);
+      trace.scrollTop = trace.scrollHeight;
+    }
+
+    function addThinkingStep() {
+      removeThinkingStep();
+      const trace = document.getElementById('agentTrace');
+      const div = document.createElement('div');
+      div.id = 'thinkingStep';
+      div.className = 'trace-step';
+      div.innerHTML = `<div class="step-connector"><div class="step-dot thinking"></div><div class="step-line"></div></div>
+    <div class="step-content"><div class="step-label thinking">Thinking...</div><div class="step-card"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div></div>`;
+      trace.appendChild(div);
+      trace.scrollTop = trace.scrollHeight;
+    }
+
+    function removeThinkingStep() {
+      const el = document.getElementById('thinkingStep');
+      if (el) el.remove();
+    }
+
+    function setStatus(text, state) {
+      document.getElementById('statusText').textContent = text;
+      document.getElementById('statusDot').className = 'status-dot ' + (state || '');
+    }
+
+    function finishRun(status) {
+      isRunning = false;
+      clearInterval(timerInterval);
+      document.getElementById('runBtn').disabled = false;
+      document.getElementById('stopBtn').style.display = 'none';
+      setStatus('Ready', status === 'done' ? 'done' : '');
+    }
+
+    function stopAgent() { isRunning = false; finishRun('stopped'); }
+  </script>
+</body>
+
+</html>

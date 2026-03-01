@@ -1,0 +1,13 @@
+INVOICE #INV-D102
+Project: Project Delta (Data Analytics)
+Date Issued: Feb 25, 2025
+Due Date: March 25, 2025
+
+Items:
+- Data Cleaning Services - $2,000
+- Monthly Analytics Report (Jan) - $1,500
+- AWS Hosting Credits - $500
+
+Total Due: $4,000
+Payment Method: Bank Transfer to Delta Global Corp.
+Status: UNPAID

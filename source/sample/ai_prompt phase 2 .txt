@@ -1,0 +1,328 @@
+เพื่อให้ **G-A-COWORK** เป็น Agentic AI ที่ฉลาดที่สุด (State-of-the-art) และประหยัดค่าใช้จ่าย (Token Optimization) มากที่สุด ผมจะออกแบบกลยุทธ์และ **Super Prompt** ที่รวบรวมฟีเจอร์ระดับสูงทั้งหมดที่คุณต้องการไว้ในที่เดียวครับ
+
+### 💡 กลยุทธ์การ Optimize & Save Tokens (เพื่อแก้ปัญหา Token Error)
+
+ปัญหา "Token ใช้งานไม่ได้" มักเกิดจาก 2 สาเหตุ: **Context ล้น** หรือ **Input ยาวเกินความจำเป็น** วิธีแก้ที่ผมจะใส่ไว้ใน Prompt คือ:
+
+1. **Summary-as-History:** แทนที่จะส่งประวัติการคุยทั้งหมดกลับไป Agent จะต้องมีหน้าที่ "สรุปความคืบหน้า" เป็นระยะเพื่อทิ้งรายละเอียดที่ไม่จำเป็น
+2. **Selective Context:** อ่านเฉพาะส่วนที่สำคัญของไฟล์ (เช่น หัวไฟล์/ท้ายไฟล์) แทนการอ่านทั้งไฟล์ถ้าไม่จำเป็น
+3. **Strict JSON Output:** บังคับให้ AI ตอบกลับด้วยรูปแบบที่สั้นและกระชับที่สุด ลด "คำพ่น" (Verbose text)
+
+---
+
+### 🚀 G-A-COWORK: Super Prompt (System Instruction)
+
+*คุณสามารถนำ Prompt นี้ไปใส่ในส่วน `System Instruction` ของ Gemini API ในโค้ด Backend ได้เลยครับ*
+
+```text
+Role: You are "G-A-COWORK PRO", the world's most advanced Agentic AI System. Your mission is to complete complex tasks with 100% accuracy while maintaining extreme token efficiency.
+
+[CORE CAPABILITIES]
+1. Hierarchical Planning: Before any action, create a 'Master Plan' and update its status after every tool call.
+2. Self-Reflection: After every tool result, evaluate if the output is correct. If an error occurs, analyze why and reformulate a new approach immediately.
+3. Long-term Memory Management: Use the 'summarize_memory' tool to condense conversation history when it exceeds 5000 tokens.
+4. Human-in-the-loop: If an action is 'High-Risk' (Deleting files, sending emails, or moving >10 files), you MUST use the 'ask_human_permission' tool.
+
+[TOKEN OPTIMIZATION RULES]
+- Be Concise: Do not repeat the user's request. 
+- Strategic Reading: When using 'read_document', only request specific page ranges or sections if possible.
+- Success-First: If the task is completed, stop immediately and provide a final summary.
+
+[WORKFLOW: THE AGENTIC LOOP]
+STEP 1: PLAN - Break the task into sub-tasks.
+STEP 2: REFLECT - Is this the most efficient way? (Token-wise)
+STEP 3: ACT - Call the necessary tool.
+STEP 4: ANALYZE - Check the tool result for errors. If it failed, fix it.
+STEP 5: LOOP - Continue until the 'Master Plan' is 100% complete.
+
+[FILE MANAGEMENT LOGIC - SPECIALIZED]
+When organizing files:
+1. Scan for keywords: Project Name, Document Type, Date.
+2. Structure: /workspace/projects/{ProjectName}/{DocType}/
+3. Naming Convention: [{ProjectName}] {DocType}_{OriginalName}
+4. Action: Check if the folder exists first, create it if not, then move.
+
+[OUTPUT FORMAT]
+Always provide a 'Thought Trace' in this format:
+- Thought: [Your reasoning]
+- Plan Update: [Step X of Y]
+- Tool Call: [Function Name]
+- Reflection: [Was it successful? What's next?]
+
+```
+
+---
+
+### 🛠️ เครื่องมือเพิ่มเติมที่ต้องให้ Copilot เขียน (Advanced Tools)
+
+เพื่อให้ Super Prompt ข้างบนทำงานได้สมบูรณ์ คุณต้องขอให้ Copilot เพิ่ม Tools เหล่านี้ใน `tools.js` ครับ:
+
+1. **`summarize_memory(text)`**: รับข้อความประวัติการคุยยาวๆ ไปย่อให้เหลือแต่ใจความสำคัญ (Save Token มหาศาล)
+2. **`ask_human_permission(action_details)`**: หยุดการทำงานและส่ง Message ไปที่ Frontend เพื่อรอปุ่มกด Approve จากคุณ (Human-in-the-loop)
+3. **`search_memory_db(query)`**: เชื่อมต่อกับ Vector Database (เช่น ChromaDB) เพื่อไปดึงข้อมูลเก่ามาใช้ (Long-term Memory)
+
+---
+
+### 📦 Prompt สำหรับ Copilot เพื่อทำระบบ Error Handling & Reflection
+
+> "ช่วยเขียน Code ในส่วน Agentic Loop ของ G-A-COWORK ให้รองรับ **Self-Reflection**:
+> โดยหาก Tool คืนค่าเป็น 'Error' หรือ 'Empty' ให้ส่ง Error message นั้นกลับไปให้ Gemini พร้อมคำสั่งว่า 'The previous tool call failed with this error. Please analyze the error, suggest a fix, and try again with a different approach.'
+> และจำกัดการลองใหม่ (Retry) ไม่เกิน 3 ครั้งต่อ 1 ขั้นตอนเพื่อป้องกัน Token Loop มหาศาล"
+
+### 💡 เคล็ดลับสุดท้ายจาก AI ที่ "เก่งที่สุด":
+
+ถ้าคุณใช้ **Gemini 2.0 Flash** มันมีฟีเจอร์ที่เรียกว่า **"Context Caching"** (ถ้าเรียกผ่าน Google Cloud/Vertex AI) ซึ่งจะช่วยลดราคา Token ได้เยอะมากในกรณีที่ส่งประวัติการคุยเดิมๆ ซ้ำๆ ครับ
+
+
+
+
+
+----------------------------
+
+เพื่อให้ระบบนี้กลายเป็น **Agentic AI ที่สมบูรณ์แบบ** และ **ประหยัด Token** ตามที่เราคุยกันไว้ ผมขอให้คุณทำ 3 ขั้นตอนสุดท้ายนี้ก่อนเริ่ม Test งานจริงครับ:
+
+---
+
+### 1. ใส่ "สมอง" (Super Prompt) ลงใน server.js
+
+เปิดไฟล์ `backend/src/server.js` แล้วหาจุดที่นิยาม `systemInstruction` หรือส่วนที่สร้าง `model` ให้คัดลอกข้อความนี้ไปแปะแทน เพื่อเปิดใช้งานโหมด **Self-Reflection** และ **Token Optimization**:
+
+```javascript
+const systemInstruction = `คุณคือ G-A-COWORK PRO เอเจนต์อัจฉริยะ 
+กฎเหล็ก:
+1. ก่อนเริ่มงาน ให้เขียน Master Plan ออกมา 1.. 2.. 3..
+2. เมื่อใช้เครื่องมือแล้ว ให้ Reflect (ทบทวน) ผลลัพธ์เสมอ ถ้า Error ให้หาวิธีแก้ใหม่ทันที (Self-Correction)
+3. ประหยัด Token: อ่านเฉพาะส่วนที่จำเป็นของไฟล์ ไม่พ่นคำตอบยาวเกินไป
+4. Human-in-the-loop: หากต้องย้ายหรือลบไฟล์เกิน 5 ไฟล์ ให้หยุดถาม User เพื่อขอ Approval ก่อนเสมอ`;
+
+// ตอนสร้าง model ให้ใส่แบบนี้
+const model = genAI.getGenerativeModel({ 
+    model: "gemini-2.0-flash",
+    systemInstruction: systemInstruction 
+});
+
+```
+
+### 2. เทคนิค Save Token (Context Caching Strategy)
+
+เนื่องจากคุณเคยเจอปัญหา Token ใช้งานไม่ได้ วิธีแก้ในโค้ดคือ **"อย่าส่งประวัติแชททั้งหมดทวนซ้ำซ้อน"** ในขณะที่รัน Loop:
+
+* บอก Copilot: *"Modify server.js to only send the last 5 turns of conversation history in each iteration to keep the context slim and save tokens."* (การทำแบบนี้จะทำให้ Gemini ไม่เอ๋อเมื่อคุยไปนานๆ)
+
+### 3. ทดสอบ Use Case จัดการไฟล์ (The Librarian Test)
+
+ลองนำไฟล์จริง (PDF หรือ Docx) ไปวางใน `backend/workspace/inbound/` แล้วพิมพ์คำสั่งนี้ในหน้า Dashboard:
+
+> **"ช่วยตรวจสอบไฟล์ใน inbound ทั้งหมด อ่านเนื้อหาข้างในแล้ววิเคราะห์ว่าเป็น Project อะไร (เช่น Alpha หรือ Beta) จากนั้นสร้างโฟลเดอร์ตามชื่อโปรเจกต์ในแฟ้ม projects และย้ายไฟล์ไปเก็บโดยตั้งชื่อใหม่เป็น [ชื่อโปรเจกต์] ประเภทเอกสาร_ชื่อเดิม.pdf"**
+
+---
+
+### ⚠️ สิ่งที่ต้องระวัง (Troubleshooting)
+
+1. **Docker Path:** ถ้าคุณรันด้วย `npm start` เฉยๆ (ไม่ผ่าน Docker) ตัว `fileManager.js` อาจจะหาโฟลเดอร์ `/app/workspace` ไม่เจอ ให้ตรวจสอบว่าในโค้ดใช้ Path แบบ Relative (เช่น `./workspace`) หรือ Absolute ครับ
+2. **Library Missing:** ถ้ามันฟ้องว่าหา `pdf-parse` หรือ `mammoth` ไม่เจอ ให้รัน:
+```bash
+cd backend && npm install pdf-parse mammoth
+
+```
+-------------------------------------------------------
+Gemini said
+การเพิ่มระบบ Human-in-the-loop (HITL) พร้อมโหมด Auto/Manual Allow และ Activity Log จะเปลี่ยนจากระบบที่ "สั่งแล้วลุ้น" ให้กลายเป็นระบบที่ "ตรวจสอบได้และปลอดภัย" ครับ
+
+นี่คือโครงสร้าง Logic และ Code ที่คุณสามารถก๊อปปี้ไปให้ Copilot ช่วย Implement ต่อได้เลยครับ
+
+1. แนวคิดการออกแบบ (Logic Flow)
+เมื่อ Agent ต้องการใช้เครื่องมือที่ "อันตราย" (เช่น deleteFile, moveFile) ระบบจะเช็คสถานะจาก Frontend:
+
+Manual Mode: Backend จะหยุดการทำงาน (Pause) และส่ง Signal ไปที่ Frontend เพื่อรอให้คุณกด "Approve" หรือ "Reject"
+
+Auto Mode: Backend จะรันงานต่อทันที แต่จะบันทึก Log ไว้เสมอ
+
+Activity Log: ทุกการตัดสินใจ (ทั้งคนและ AI) จะถูกบันทึกเป็นประวัติพร้อม Timestamp
+
+2. โค้ดส่วน Frontend (Dashboard Update)
+เพิ่มส่วน UI สำหรับควบคุมโหมดและแสดงตารางประวัติกิจกรรมในไฟล์ index.html:
+
+HTML
+<div class="control-panel">
+  <h3>🛡️ Security Gate</h3>
+  <label class="switch">
+    <input type="checkbox" id="autoAllowToggle">
+    <span class="slider"></span>
+    Auto-Approve Dangerous Actions
+  </label>
+</div>
+
+<div class="activity-log-container">
+  <h3>📜 G-A-COWORK Activity Log</h3>
+  <table id="logTable">
+    <thead>
+      <tr>
+        <th>Time</th>
+        <th>Action</th>
+        <th>Status</th>
+        <th>Authorized By</th>
+      </tr>
+    </thead>
+    <tbody id="logBody"></tbody>
+  </table>
+</div>
+
+<div id="approvalModal" class="modal" style="display:none;">
+  <div class="modal-content">
+    <h3>⚠️ Approval Required</h3>
+    <p id="approvalMessage"></p>
+    <button id="approveBtn" class="btn-success">Allow</button>
+    <button id="rejectBtn" class="btn-danger">Block</button>
+  </div>
+</div>
+3. โค้ดส่วน Backend (server.js - The Gatekeeper)
+เราต้องสร้างฟังก์ชันคอยดักจับก่อนเรียกใช้เครื่องมือจริง:
+
+JavaScript
+// backend/src/server.js
+
+async function executeWithSecurity(toolName, args, isAutoAllow) {
+    const dangerousTools = ['organize_file', 'delete_file', 'write_file'];
+    
+    // บันทึก Log เริ่มต้น
+    const logId = addActivityLog(toolName, args, 'Pending');
+
+    if (dangerousTools.includes(toolName) && !isAutoAllow) {
+        // ส่งสัญญาณไปที่ Frontend ผ่าน SSE เพื่อรอการกดยืนยัน
+        sendSSE('REQUIRE_APPROVAL', { logId, toolName, args });
+        
+        // รอการตอบกลับจาก User (ใช้ Promise หรือ Long Polling)
+        const userDecision = await waitForUserDecision(logId);
+        
+        if (userDecision === 'REJECTED') {
+            updateActivityLog(logId, 'Blocked', 'Human');
+            throw new Error(`Action ${toolName} was blocked by user.`);
+        }
+        updateActivityLog(logId, 'Approved', 'Human');
+    } else {
+        updateActivityLog(logId, 'Auto-Approved', 'System');
+    }
+
+    // รันเครื่องมือจริง
+    return await tools[toolName](args);
+}
+4. ระบบ Activity Log (Memory/Database)
+ใน backend/src/tools/activityLogger.js ให้สร้างระบบเก็บ Log แบบง่าย:
+
+JavaScript
+const fs = require('fs');
+const path = require('path');
+
+const LOG_PATH = path.join(__dirname, '../../workspace/activity.log');
+
+function addActivityLog(action, details, status, authBy = 'System') {
+    const entry = {
+        timestamp: new Date().toISOString(),
+        action,
+        details: JSON.stringify(details),
+        status,
+        authorizedBy: authBy
+    };
+    
+    // บันทึกลงไฟล์เพื่อดูย้อนหลัง
+    fs.appendFileSync(LOG_PATH, JSON.stringify(entry) + '\n');
+    return entry;
+}
+🚀 Prompt สำหรับสั่ง Copilot ทีเดียวจบ (The Final Step)
+**"ช่วยปรับปรุงระบบ G-A-COWORK ให้มีฟีเจอร์ Security & Accountability ดังนี้:
+
+สร้าง 'Human-in-the-loop' Gate: สำหรับฟังก์ชัน organize_file และ write_file
+
+เพิ่ม UI Toggle ใน Frontend: ระหว่าง 'Manual Approval' และ 'Auto Allow'
+
+Implement SSE Signal: เมื่อติด Manual Approval ให้ Frontend แสดง Modal Pop-up เพื่อรอรับค่า 'Allow' หรือ 'Block' จากผู้ใช้
+
+สร้าง 'Activity Log' Table: ใน Frontend เพื่อดึงข้อมูลประวัติจาก activity.log ใน Backend มาแสดงผลแบบเรียลไทม์ (ประกอบด้วย เวลา, เครื่องมือที่ใช้, สถานะการอนุมัติ)
+
+ตกแต่งให้สวยงามสไตล์ Dashboard มืด (Dark Mode)"**
+
+----------------------------------------------------------
+
+ทำให้ AI สามารถอ่าน Activity Log ของตัวเองได้ คือการมอบ "ความจำระยะยาวเกี่ยวกับพฤติกรรม" (Operational Memory) ให้กับมันครับ วิธีนี้จะช่วยให้ AI ไม่ทำงานซ้ำซ้อน และสามารถตอบคำถามคุณได้ว่า "เมื่อกี้ผมเพิ่งย้ายไฟล์ X ไปที่โฟลเดอร์ Y ครับ"
+
+เพื่อให้ระบบ G-A-COWORK สมบูรณ์แบบ ผมจะแบ่งเป็น 3 ส่วนหลัก: โค้ดหลังบ้าน (Backend), การนิยามเครื่องมือให้ Gemini (Tool Definition) และการอัปเดตระบบ Log ให้ฉลาดขึ้น
+
+1. โค้ด Backend: ฟังก์ชัน read_activity_log
+เพิ่มฟังก์ชันนี้เข้าไปใน backend/src/tools/fileManager.js หรือไฟล์ที่คุณเก็บ Tool ไว้ครับ:
+
+JavaScript
+const fs = require('fs');
+const path = require('path');
+
+// ฟังก์ชันสำหรับอ่าน Log ล่าสุดเพื่อให้ AI วิเคราะห์
+async function read_activity_log(limit = 10) {
+    try {
+        const logPath = path.join(__dirname, '../../workspace/activity.log');
+        
+        if (!fs.existsSync(logPath)) {
+            return "No activity logs found yet. The system is fresh.";
+        }
+
+        const data = fs.readFileSync(logPath, 'utf8');
+        const lines = data.trim().split('\n');
+        
+        // อ่านเฉพาะบรรทัดท้ายๆ ตามจำนวน limit เพื่อประหยัด Token
+        const recentLogs = lines.slice(-limit).map(line => JSON.parse(line));
+        
+        return JSON.stringify({
+            status: "success",
+            message: `Retrieved last ${recentLogs.length} activities`,
+            data: recentLogs
+        });
+    } catch (error) {
+        return JSON.stringify({ status: "error", message: error.message });
+    }
+}
+2. การนิยาม Tool (Function Declaration)
+ต้องส่งนิยามนี้ให้ Gemini ใน server.js เพื่อให้มันรู้ว่า "เรียกใช้ฟังก์ชันนี้ได้เมื่อไหร่":
+
+JavaScript
+{
+    name: "read_activity_log",
+    description: "เรียกดูประวัติการทำงานล่าสุดของ AI (Activity Log) เช่น การย้ายไฟล์ การสร้างโฟลเดอร์ หรือการขออนุมัติจาก User ใช้เพื่อตรวจสอบว่างานไหนทำไปแล้วบ้าง",
+    parameters: {
+        type: "OBJECT",
+        properties: {
+            limit: {
+                type: "NUMBER",
+                description: "จำนวนรายการล่าสุดที่ต้องการอ่าน (ค่าเริ่มต้นคือ 10)"
+            }
+        }
+    }
+}
+3. การทำ Activity Log ให้ละเอียดขึ้น (Enhanced Logging)
+เพื่อให้ AI อ่านแล้วเข้าใจบริบทได้ดีที่สุด เราควรปรับฟังก์ชันบันทึก Log ให้รองรับสถานะ Manual/Auto และ User Decision ด้วย:
+
+JavaScript
+function addActivityLog(action, details, status, authBy = 'System') {
+    const entry = {
+        timestamp: new Date().toLocaleString('th-TH'),
+        action: action, // เช่น 'MOVE_FILE', 'READ_PDF'
+        details: details, // เก็บค่า { from: '...', to: '...' }
+        status: status, // 'Pending', 'Approved', 'Rejected', 'Completed'
+        authorizedBy: authBy // 'System' หรือ 'User'
+    };
+    
+    fs.appendFileSync(logPath, JSON.stringify(entry) + '\n');
+}
+4. ตัวอย่างการทำงาน (Scenario)
+เมื่อคุณถาม G-A-COWORK ว่า "วันนี้คุณจัดการไฟล์โปรเจกต์ Alpha ไปถึงไหนแล้ว?"
+
+Thought: ฉันจำไม่ได้ว่าทำอะไรไปบ้าง ฉันต้องดู Activity Log ก่อน
+
+Tool Call: read_activity_log({ limit: 20 })
+
+Result: ได้รายการการย้ายไฟล์ 5 ไฟล์ที่มี Prefix [Alpha] และสถานะ 'Approved'
+
+Final Answer: "วันนี้ผมจัดการย้ายไฟล์ใบเสนอราคาและรายงานการประชุมของโปรเจกต์ Alpha รวม 5 ไฟล์เข้าโฟลเดอร์เรียบร้อยครับ โดยได้รับการอนุมัติแบบ Manual จากคุณเมื่อเวลา 10:30 น."
+
+💡 เคล็ดลับเพิ่มประสิทธิภาพ (Self-Reflect)
+ใน System Instruction (Super Prompt) คุณควรเพิ่มประโยคนี้เข้าไป:
+
+"ก่อนเริ่มงานใหม่ที่อาจซ้ำซ้อน ให้ตรวจสอบประวัติการทำงานผ่าน read_activity_log เสมอ เพื่อประหยัด Token และไม่ทำงานที่เคยทำสำเร็จไปแล้วซ้ำอีก"

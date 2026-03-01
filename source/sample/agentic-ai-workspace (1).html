@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgentOS — Gemini Agentic AI Workspace</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #0a0a0b;
+    --surface: #111113;
+    --surface2: #1a1a1e;
+    --border: #222228;
+    --accent: #4285f4;
+    --accent2: #34a853;
+    --accent3: #fbbc04;
+    --text: #e8e8f0;
+    --muted: #5a5a72;
+    --success: #3ecf8e;
+    --danger: #f56565;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    height: 52px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: -0.02em;
+  }
+
+  .logo-icon {
+    width: 28px;
+    height: 28px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 6px var(--success);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* MAIN LAYOUT */
+  main {
+    display: grid;
+    grid-template-columns: 260px 1fr 300px;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .sidebar-section {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .task-input-area {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  textarea.task-input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    padding: 10px 12px;
+    resize: none;
+    height: 90px;
+    outline: none;
+    transition: border-color 0.2s;
+    line-height: 1.5;
+  }
+
+  textarea.task-input:focus {
+    border-color: var(--accent);
+  }
+
+  textarea.task-input::placeholder { color: var(--muted); }
+
+  .btn {
+    padding: 9px 16px;
+    border-radius: 7px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+  }
+
+  .btn-primary:hover { background: #3367d6; transform: translateY(-1px); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .btn-sm {
+    padding: 5px 10px;
+    font-size: 11px;
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+
+  .btn-ghost:hover { color: var(--text); border-color: var(--accent); }
+
+  /* AGENT TOOLS */
+  .tools-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .tool-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 7px;
+    background: var(--surface2);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .tool-item.active {
+    border-color: var(--accent);
+    background: rgba(124, 106, 247, 0.1);
+  }
+
+  .tool-icon {
+    font-size: 16px;
+    width: 24px;
+    text-align: center;
+  }
+
+  .tool-name {
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .tool-status {
+    margin-left: auto;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--border);
+  }
+
+  .tool-status.on { background: var(--success); }
+
+  /* HISTORY */
+  .history-list {
+    overflow-y: auto;
+    flex: 1;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .history-item {
+    padding: 8px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--muted);
+    transition: all 0.15s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .history-item:hover { background: var(--surface2); color: var(--text); }
+
+  /* CENTER - AGENT TRACE */
+  .agent-panel {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg);
+  }
+
+  .agent-header {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .agent-title {
+    font-size: 13px;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--muted);
+  }
+
+  .agent-title span { color: var(--text); }
+
+  .agent-trace {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* TRACE STEPS */
+  .trace-step {
+    display: flex;
+    gap: 16px;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .step-connector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    flex-shrink: 0;
+  }
+
+  .step-dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  .step-dot.thinking { background: rgba(124, 106, 247, 0.2); border: 1.5px solid var(--accent); }
+  .step-dot.tool { background: rgba(78, 205, 196, 0.2); border: 1.5px solid var(--accent2); }
+  .step-dot.result { background: rgba(62, 207, 142, 0.2); border: 1.5px solid var(--success); }
+  .step-dot.error { background: rgba(245, 101, 101, 0.2); border: 1.5px solid var(--danger); }
+  .step-dot.user { background: rgba(247, 201, 72, 0.2); border: 1.5px solid var(--accent3); }
+
+  .step-line {
+    width: 1px;
+    flex: 1;
+    min-height: 12px;
+    background: var(--border);
+    margin: 4px 0;
+  }
+
+  .step-content {
+    flex: 1;
+    padding-bottom: 4px;
+  }
+
+  .step-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .step-label.thinking { color: var(--accent); }
+  .step-label.tool { color: var(--accent2); }
+  .step-label.result { color: var(--success); }
+  .step-label.error { color: var(--danger); }
+  .step-label.user { color: var(--accent3); }
+
+  .step-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text);
+  }
+
+  .step-card.code-card {
+    background: #0d0d10;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--accent2);
+    border-color: rgba(78, 205, 196, 0.2);
+  }
+
+  .tool-call-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tool-badge {
+    background: rgba(78, 205, 196, 0.15);
+    color: var(--accent2);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+  }
+
+  .tool-call-args {
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  /* TYPING INDICATOR */
+  .typing-indicator {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    padding: 4px 0;
+  }
+
+  .typing-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: typingBounce 1.2s ease infinite;
+  }
+
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes typingBounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-6px); opacity: 1; }
+  }
+
+  /* EMPTY STATE */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 16px;
+    color: var(--muted);
+    text-align: center;
+    padding: 40px;
+  }
+
+  .empty-icon {
+    font-size: 48px;
+    opacity: 0.3;
+  }
+
+  .empty-title {
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--text);
+    opacity: 0.5;
+  }
+
+  .empty-sub {
+    font-size: 13px;
+    max-width: 280px;
+    line-height: 1.6;
+  }
+
+  .quick-tasks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 8px;
+  }
+
+  .quick-task-btn {
+    padding: 7px 14px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: var(--surface);
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s;
+    font-family: 'IBM Plex Sans', sans-serif;
+  }
+
+  .quick-task-btn:hover {
+    border-color: var(--accent);
+    color: var(--text);
+    background: rgba(124, 106, 247, 0.1);
+  }
+
+  /* RIGHT PANEL - OUTPUT */
+  .output-panel {
+    border-left: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .output-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .output-tabs {
+    display: flex;
+    gap: 4px;
+  }
+
+  .tab {
+    padding: 4px 10px;
+    border-radius: 5px;
+    font-size: 11px;
+    cursor: pointer;
+    color: var(--muted);
+    transition: all 0.15s;
+  }
+
+  .tab.active {
+    background: var(--surface2);
+    color: var(--text);
+  }
+
+  .output-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .output-placeholder {
+    color: var(--muted);
+    text-align: center;
+    margin-top: 40px;
+    font-size: 12px;
+  }
+
+  /* METRICS */
+  .metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .metric {
+    background: var(--surface2);
+    border-radius: 7px;
+    padding: 10px;
+  }
+
+  .metric-val {
+    font-size: 20px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .metric-label {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    margin-top: 2px;
+  }
+
+  /* SCROLLBARS */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* API KEY BANNER */
+  .api-banner {
+    background: rgba(124, 106, 247, 0.1);
+    border: 1px solid rgba(124, 106, 247, 0.3);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  .api-key-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 7px 10px;
+    outline: none;
+    margin-top: 6px;
+  }
+
+  .api-key-input:focus { border-color: var(--accent); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    AgentOS
+  </div>
+  <div class="status-bar">
+    <div class="status-dot"></div>
+    <span id="statusText">Ready</span>
+    <span>·</span>
+    <span id="modelLabel">gemini-2.0-flash</span>
+  </div>
+</header>
+
+<main>
+  <!-- LEFT SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">API Key</div>
+      <div class="api-banner">
+        🔑 Enter your Google Gemini API key to run agentic tasks
+      </div>
+      <input class="api-key-input" type="password" id="apiKeyInput" placeholder="AIza..." />
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Task</div>
+      <div class="task-input-area">
+        <textarea class="task-input" id="taskInput" placeholder="Describe what you want the agent to do...&#10;&#10;e.g. Research the latest AI trends and summarize them"></textarea>
+        <button class="btn btn-primary" id="runBtn" onclick="runAgent()">
+          ▶ Run Agent
+        </button>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Available Tools</div>
+      <div class="tools-list">
+        <div class="tool-item active" id="tool-search">
+          <span class="tool-icon">🔍</span>
+          <span class="tool-name">Web Search</span>
+          <div class="tool-status on"></div>
+        </div>
+        <div class="tool-item active" id="tool-code">
+          <span class="tool-icon">💻</span>
+          <span class="tool-name">Code Execution</span>
+          <div class="tool-status on"></div>
+        </div>
+        <div class="tool-item active" id="tool-calc">
+          <span class="tool-icon">🧮</span>
+          <span class="tool-name">Calculator</span>
+          <div class="tool-status on"></div>
+        </div>
+        <div class="tool-item active" id="tool-files">
+          <span class="tool-icon">📁</span>
+          <span class="tool-name">File Manager</span>
+          <div class="tool-status on"></div>
+        </div>
+        <div class="tool-item" id="tool-email">
+          <span class="tool-icon">📧</span>
+          <span class="tool-name">Email (Gmail)</span>
+          <div class="tool-status"></div>
+        </div>
+        <div class="tool-item" id="tool-calendar">
+          <span class="tool-icon">📅</span>
+          <span class="tool-name">Calendar</span>
+          <div class="tool-status"></div>
+        </div>
+        <div class="tool-item" id="tool-browser">
+          <span class="tool-icon">🌐</span>
+          <span class="tool-name">Browser Control</span>
+          <div class="tool-status"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="history-list">
+      <div class="sidebar-label" style="padding: 0 0 8px 0;">Recent Tasks</div>
+      <div class="history-item">Research AI trends 2025</div>
+      <div class="history-item">Write Python web scraper</div>
+      <div class="history-item">Summarize uploaded PDF</div>
+      <div class="history-item">Plan project roadmap</div>
+    </div>
+  </div>
+
+  <!-- CENTER: AGENT TRACE -->
+  <div class="agent-panel">
+    <div class="agent-header">
+      <span class="agent-title">Agent Trace · <span id="traceTitle">No task running</span></span>
+      <button class="btn btn-ghost btn-sm" onclick="clearTrace()">Clear</button>
+    </div>
+    <div class="agent-trace" id="agentTrace">
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">🤖</div>
+        <div class="empty-title">No task running</div>
+        <div class="empty-sub">Enter a task and click Run Agent to watch the agent think and act in real time.</div>
+        <div class="quick-tasks">
+          <div class="quick-task-btn" onclick="setQuickTask('Research the top 5 AI models in 2025 and compare their capabilities')">🔬 AI Research</div>
+          <div class="quick-task-btn" onclick="setQuickTask('Write a Python script that generates a Fibonacci sequence and explain each step')">🐍 Write Code</div>
+          <div class="quick-task-btn" onclick="setQuickTask('Create a structured 7-day meal plan for a vegetarian athlete')">🥗 Meal Plan</div>
+          <div class="quick-task-btn" onclick="setQuickTask('Draft a professional email declining a meeting politely but firmly')">✉️ Write Email</div>
+          <div class="quick-task-btn" onclick="setQuickTask('Explain how transformers work in deep learning, step by step')">🧠 Explain Concept</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: OUTPUT PANEL -->
+  <div class="output-panel">
+    <div class="output-header">
+      <div class="output-tabs">
+        <div class="tab active">Output</div>
+        <div class="tab">Raw</div>
+      </div>
+      <span id="stepCount">0 steps</span>
+    </div>
+    <div class="output-content" id="outputContent">
+      <div class="output-placeholder">Agent output will appear here when the task is complete.</div>
+    </div>
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-val" id="metricSteps">0</div>
+        <div class="metric-label">Steps Taken</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val" id="metricTime">0s</div>
+        <div class="metric-label">Elapsed</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val" id="metricTokens">0</div>
+        <div class="metric-label">Tokens Used</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val" id="metricStatus">—</div>
+        <div class="metric-label">Status</div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+  // ─── State ────────────────────────────────────────────────────────────────
+  let stepCount = 0;
+  let startTime = null;
+  let timerInterval = null;
+  let conversationHistory = []; // Gemini format: [{role, parts:[]}]
+  let totalTokens = 0;
+
+  const GEMINI_MODEL = 'gemini-2.0-flash';
+
+  // ─── Tool definitions (Gemini function declaration format) ────────────────
+  const GEMINI_TOOLS = [{
+    functionDeclarations: [
+      {
+        name: "web_search",
+        description: "Search the web for current, up-to-date information on any topic.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            query: { type: "STRING", description: "The search query to look up" }
+          },
+          required: ["query"]
+        }
+      },
+      {
+        name: "execute_code",
+        description: "Execute Python or JavaScript code and return the output.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            language: { type: "STRING", description: "Programming language: 'python' or 'javascript'" },
+            code: { type: "STRING", description: "The source code to execute" }
+          },
+          required: ["language", "code"]
+        }
+      },
+      {
+        name: "read_file",
+        description: "Read and return the contents of a file at the given path.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            path: { type: "STRING", description: "Absolute or relative file path" }
+          },
+          required: ["path"]
+        }
+      },
+      {
+        name: "write_file",
+        description: "Write text content to a file at the given path.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            path: { type: "STRING", description: "File path to write to" },
+            content: { type: "STRING", description: "Content to write into the file" }
+          },
+          required: ["path", "content"]
+        }
+      },
+      {
+        name: "calculate",
+        description: "Evaluate a mathematical expression and return the result.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            expression: { type: "STRING", description: "Math expression, e.g. '2 * (3 + 4)'" }
+          },
+          required: ["expression"]
+        }
+      }
+    ]
+  }];
+
+  // ─── Simulated tool execution ─────────────────────────────────────────────
+  function executeToolLocally(name, args) {
+    switch (name) {
+      case 'web_search':
+        return `Web search results for: "${args.query}"\n\n` +
+          `[1] Wikipedia — Overview of ${args.query}\n` +
+          `    Summary: ${args.query} is a well-documented topic with active research as of 2025.\n\n` +
+          `[2] Google Scholar — Recent papers on ${args.query}\n` +
+          `    Multiple peer-reviewed articles published in 2024–2025.\n\n` +
+          `[3] TechCrunch / Wired — Industry analysis\n` +
+          `    Experts highlight key breakthroughs and future directions.\n\n` +
+          `[Note: This is a simulated search. Connect a real search API for live results.]`;
+
+      case 'execute_code':
+        return `Executing ${args.language} code...\n\n` +
+          `> ${args.code.split('\n')[0]}${args.code.split('\n').length > 1 ? '\n  ...' : ''}\n\n` +
+          `Output: [Code execution simulated — wire up a backend sandbox for real output]\nExit code: 0`;
+
+      case 'read_file':
+        return `Reading file: ${args.path}\n\n` +
+          `[File contents simulated — connect a filesystem API for real access]\n` +
+          `--- ${args.path} ---\nSample content line 1\nSample content line 2\n---`;
+
+      case 'write_file':
+        return `✅ Successfully wrote ${(args.content || '').length} characters to: ${args.path}\n` +
+          `[File write simulated — connect a filesystem API for real persistence]`;
+
+      case 'calculate': {
+        try {
+          // Safe eval for simple math
+          const result = Function(`"use strict"; return (${args.expression})`)();
+          return `${args.expression} = ${result}`;
+        } catch (e) {
+          return `Error evaluating expression: ${e.message}`;
+        }
+      }
+
+      default:
+        return `Tool "${name}" executed successfully (simulated).`;
+    }
+  }
+
+  // ─── UI helpers ───────────────────────────────────────────────────────────
+  function setQuickTask(text) {
+    document.getElementById('taskInput').value = text;
+  }
+
+  function clearTrace() {
+    document.getElementById('agentTrace').innerHTML = `
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">🤖</div>
+        <div class="empty-title">No task running</div>
+        <div class="empty-sub">Enter a task and click Run Agent to watch Gemini think and act in real time.</div>
+      </div>`;
+    document.getElementById('outputContent').innerHTML =
+      '<div class="output-placeholder">Agent output will appear here when the task is complete.</div>';
+    stepCount = 0; totalTokens = 0;
+    updateMetrics(0, 0);
+    document.getElementById('traceTitle').textContent = 'No task running';
+    document.getElementById('statusText').textContent = 'Ready';
+    document.getElementById('metricStatus').textContent = '—';
+    conversationHistory = [];
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+    document.getElementById('metricTime').textContent = '0s';
+  }
+
+  function updateMetrics(steps, tokens) {
+    document.getElementById('metricSteps').textContent = steps;
+    document.getElementById('metricTokens').textContent = tokens > 1000 ? (tokens / 1000).toFixed(1) + 'k' : tokens;
+    document.getElementById('stepCount').textContent = steps + ' steps';
+  }
+
+  function addTraceStep(type, label, content, isCode = false) {
+    const trace = document.getElementById('agentTrace');
+    const empty = document.getElementById('emptyState');
+    if (empty) empty.remove();
+
+    stepCount++;
+    updateMetrics(stepCount, totalTokens);
+
+    const icons = { thinking: '💭', tool: '🔧', result: '✅', error: '❌', user: '👤' };
+    const div = document.createElement('div');
+    div.className = 'trace-step';
+    const cardClass = isCode ? 'step-card code-card' : 'step-card';
+
+    div.innerHTML = `
+      <div class="step-connector">
+        <div class="step-dot ${type}">${icons[type]}</div>
+        <div class="step-line"></div>
+      </div>
+      <div class="step-content">
+        <div class="step-label ${type}">${label}</div>
+        <div class="${cardClass}">${content}</div>
+      </div>`;
+    trace.appendChild(div);
+    trace.scrollTop = trace.scrollHeight;
+    return div;
+  }
+
+  function addThinkingStep() {
+    const trace = document.getElementById('agentTrace');
+    const empty = document.getElementById('emptyState');
+    if (empty) empty.remove();
+
+    const div = document.createElement('div');
+    div.className = 'trace-step';
+    div.id = 'thinkingStep';
+    div.innerHTML = `
+      <div class="step-connector">
+        <div class="step-dot thinking">💭</div>
+        <div class="step-line"></div>
+      </div>
+      <div class="step-content">
+        <div class="step-label thinking">Gemini Thinking</div>
+        <div class="step-card">
+          <div class="typing-indicator">
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+          </div>
+        </div>
+      </div>`;
+    trace.appendChild(div);
+    trace.scrollTop = trace.scrollHeight;
+    return div;
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  // ─── Main agent loop ──────────────────────────────────────────────────────
+  async function runAgent() {
+    const apiKey = document.getElementById('apiKeyInput').value.trim();
+    const task = document.getElementById('taskInput').value.trim();
+
+    if (!apiKey) { alert('Please enter your Google Gemini API key (starts with AIza...)'); return; }
+    if (!task)   { alert('Please enter a task'); return; }
+
+    clearTrace();
+    conversationHistory = [];
+    document.getElementById('runBtn').disabled = true;
+    document.getElementById('traceTitle').textContent = task.slice(0, 50) + (task.length > 50 ? '…' : '');
+    document.getElementById('statusText').textContent = 'Running';
+    document.getElementById('metricStatus').textContent = '▶ Run';
+
+    startTime = Date.now();
+    timerInterval = setInterval(() => {
+      document.getElementById('metricTime').textContent =
+        ((Date.now() - startTime) / 1000).toFixed(1) + 's';
+    }, 100);
+
+    // Show user task in trace
+    addTraceStep('user', 'Task', escapeHtml(task));
+
+    // Gemini conversation history starts with the user turn
+    conversationHistory.push({
+      role: 'user',
+      parts: [{ text: task }]
+    });
+
+    const GEMINI_ENDPOINT =
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+
+    const systemInstruction = {
+      parts: [{
+        text: `You are an autonomous AI agent powered by Google Gemini. 
+You have access to tools: web_search, execute_code, read_file, write_file, and calculate.
+Use them proactively to complete tasks. Think step-by-step.
+When you have all the information needed, provide a comprehensive, well-structured final answer.`
+      }]
+    };
+
+    const maxIterations = 10;
+    let iteration = 0;
+    let finalText = '';
+
+    while (iteration < maxIterations) {
+      iteration++;
+      addThinkingStep();
+
+      try {
+        const requestBody = {
+          system_instruction: systemInstruction,
+          contents: conversationHistory,
+          tools: GEMINI_TOOLS,
+          generationConfig: {
+            maxOutputTokens: 2048,
+            temperature: 0.7
+          }
+        };
+
+        const response = await fetch(GEMINI_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody)
+        });
+
+        // Remove thinking indicator
+        const thinkEl = document.getElementById('thinkingStep');
+        if (thinkEl) thinkEl.remove();
+
+        if (!response.ok) {
+          const errData = await response.json();
+          const msg = errData.error?.message || JSON.stringify(errData);
+          addTraceStep('error', 'Gemini API Error', escapeHtml(msg));
+          document.getElementById('metricStatus').textContent = '✗ Error';
+          break;
+        }
+
+        const data = await response.json();
+
+        // Token accounting
+        const usage = data.usageMetadata;
+        if (usage) {
+          totalTokens += (usage.promptTokenCount || 0) + (usage.candidatesTokenCount || 0);
+          updateMetrics(stepCount, totalTokens);
+        }
+
+        const candidate = data.candidates?.[0];
+        if (!candidate) {
+          addTraceStep('error', 'No Response', 'Gemini returned no candidates.');
+          break;
+        }
+
+        const parts = candidate.content?.parts || [];
+        const finishReason = candidate.finishReason; // STOP | FUNCTION_CALLS | MAX_TOKENS
+
+        // Add model turn to history
+        conversationHistory.push({
+          role: 'model',
+          parts: parts
+        });
+
+        // Collect function calls and text from this response
+        const functionCalls = parts.filter(p => p.functionCall);
+        const textParts = parts.filter(p => p.text);
+
+        // Render any text reasoning
+        for (const tp of textParts) {
+          if (tp.text && tp.text.trim()) {
+            addTraceStep('thinking', 'Gemini Reasoning', escapeHtml(tp.text));
+            finalText = tp.text; // track latest text as potential final answer
+          }
+        }
+
+        // If no function calls → we're done
+        if (functionCalls.length === 0 || finishReason === 'STOP') {
+          document.getElementById('outputContent').innerHTML =
+            `<div style="line-height:1.8; white-space: pre-wrap;">${escapeHtml(finalText || 'Task completed.')}</div>`;
+          document.getElementById('metricStatus').textContent = '✓ Done';
+          document.getElementById('statusText').textContent = 'Done';
+          break;
+        }
+
+        // Process each function call and collect responses
+        const functionResponseParts = [];
+
+        for (const part of functionCalls) {
+          const fc = part.functionCall;
+          const toolName = fc.name;
+          const toolArgs = fc.args || {};
+
+          // Show tool call in trace
+          const argsStr = escapeHtml(JSON.stringify(toolArgs, null, 2));
+          const toolHtml = `
+            <div class="tool-call-header">
+              <span class="tool-badge">${escapeHtml(toolName)}</span>
+              <span style="color: var(--muted); font-size: 11px;">Gemini function call</span>
+            </div>
+            <div class="tool-call-args">${argsStr}</div>`;
+          addTraceStep('tool', `Tool Call: ${escapeHtml(toolName)}`, toolHtml);
+
+          // Execute tool locally (simulated)
+          const toolResult = executeToolLocally(toolName, toolArgs);
+          addTraceStep('result', `Tool Result: ${escapeHtml(toolName)}`, escapeHtml(toolResult), true);
+
+          functionResponseParts.push({
+            functionResponse: {
+              name: toolName,
+              response: { output: toolResult }
+            }
+          });
+        }
+
+        // Add tool results as a user turn (Gemini expects this)
+        conversationHistory.push({
+          role: 'user',
+          parts: functionResponseParts
+        });
+
+      } catch (err) {
+        const thinkEl = document.getElementById('thinkingStep');
+        if (thinkEl) thinkEl.remove();
+        addTraceStep('error', 'Error', escapeHtml(err.message));
+        document.getElementById('metricStatus').textContent = '✗ Error';
+        break;
+      }
+    }
+
+    if (iteration >= maxIterations) {
+      addTraceStep('error', 'Max Iterations', 'Agent reached the maximum iteration limit (10). Task may be incomplete.');
+    }
+
+    clearInterval(timerInterval);
+    document.getElementById('runBtn').disabled = false;
+    updateMetrics(stepCount, totalTokens);
+  }
+
+  // ─── Tool toggles ─────────────────────────────────────────────────────────
+  document.querySelectorAll('.tool-item').forEach(item => {
+    item.addEventListener('click', () => {
+      item.classList.toggle('active');
+      item.querySelector('.tool-status').classList.toggle('on');
+    });
+  });
+</script>
+</body>
+</html>

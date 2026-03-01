@@ -1,0 +1,263 @@
+เพื่อให้คุณสร้าง **G-A-COWORK (Gemini-Agentic Cowork)** ได้เร็วที่สุด ผมได้เตรียมชุด Prompt และโครงสร้างไฟล์สำหรับส่งให้ Copilot (หรือ Cursor/ChatGPT) ช่วยเขียนโค้ดให้ โดยเน้นการใช้ **Docker** เพื่อให้รันได้เหมือนกันทั้งบน Windows และ Mac ครับ
+
+### 1. โครงสร้างโปรเจกต์ (Project Structure)
+
+บอก Copilot ให้สร้างโครงสร้างตามนี้:
+
+```text
+G-A-COWORK/
+├── backend/
+│   ├── src/
+│   │   ├── tools/          # เก็บ Logic ของ WebSearch, CodeRunner, FileSystem
+│   │   └── server.js       # Express.js Main Server
+│   ├── Dockerfile
+│   └── package.json
+├── frontend/
+│   ├── index.html          # ใช้ไฟล์ที่เคยคุยกับ Claude มาปรับแต่ง
+│   └── style.css
+└── docker-compose.yml
+
+```
+
+---
+
+### 2. Prompt สำหรับส่งให้ Copilot
+
+คุณสามารถคัดลอกข้อความด้านล่างนี้ไปสั่ง Copilot ได้เลย:
+
+> **"ช่วยสร้าง Agentic AI Web App ชื่อ 'G-A-COWORK' โดยใช้ Gemini API (Google Generative AI SDK) มีคุณสมบัติดังนี้:
+> 1. Backend: ใช้ Node.js (Express) รันบน Docker
+> 2. Frontend: เป็น Single Page HTML/JS (Dashboard สไตล์ AgentOS) ที่แสดงผล Agent Trace (Reasoning > Call Tool > Result)
+> 3. Agentic Loop: ให้ AI สามารถเรียกใช้ Tools ได้หลายครั้งจนกว่างานจะเสร็จ
+> 4. Tools ที่ต้องมี:
+> * webSearch: ใช้ Tavily API
+> * codeRunner: รัน JavaScript ใน Sandbox
+> * fileSystem: อ่าน/เขียนไฟล์ในโฟลเดอร์ /workspace ของคอนเทนเนอร์
+> 
+> 
+> 5. Deployment: เขียนไฟล์ docker-compose.yml สำหรับรันทั้ง Frontend และ Backend พร้อมกัน"**
+> 
+> 
+
+---
+
+### 3. ตัวอย่าง Code สำคัญที่ต้องมี (เพื่อให้ Copilot เขียนตามแนวทางนี้)
+
+#### **A. ส่วนของ Backend (server.js - หัวใจของ G-S-Work)**
+
+ไฟล์นี้จะทำหน้าที่เป็น Agentic Loop จริงๆ ไม่ใช่แค่แชทบอทธรรมดา:
+
+```javascript
+// backend/src/server.js
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const express = require("express");
+const app = express();
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({ 
+    model: "gemini-2.0-flash", // ใช้รุ่นใหม่ล่าสุด
+    tools: [
+        { functionDeclarations: [ /* นิยาม toolSearch, toolWriteFile ตรงนี้ */ ] }
+    ]
+});
+
+app.post("/chat", async (req, res) => {
+    const { message, history } = req.body;
+    let chat = model.startChat({ history });
+    
+    // Agentic Loop
+    let result = await chat.sendMessage(message);
+    let call = result.response.functionCalls();
+    
+    while(call) {
+        // 1. ตรวจสอบว่า AI อยากใช้ Tool อะไร
+        // 2. รัน Logic ของ Tool นั้นๆ ใน Backend
+        // 3. ส่งผลลัพธ์กลับไปให้ Gemini คิดต่อ
+        // 4. วนลูปจนกว่า Gemini จะตอบเป็นข้อความสรุป
+    }
+    res.json(finalResponse);
+});
+
+```
+
+#### **B. ส่วนของ Docker (เพื่อให้ใช้ได้ทั้ง Windows/Mac)**
+
+สร้างไฟล์ `docker-compose.yml` ที่ root folder:
+
+```yaml
+version: '3.8'
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "3000:3000"
+    env_file: .env
+    volumes:
+      - ./workspace:/app/workspace  # พื้นที่ทำงานของ AI Agent
+
+  frontend:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html
+
+```
+
+---
+
+### 4. วิธีเริ่มงาน (Workflow)
+
+1. **เตรียม API Key:** ไปที่ Google AI Studio และ Tavily เพื่อเอา Key มาใส่ในไฟล์ `.env`
+2. **Copy Prompt:** เอาข้อความในข้อ 2 ไปแปะใน Copilot
+3. **Run Docker:** เปิด Terminal ในโฟลเดอร์โปรเจกต์แล้วพิมพ์:
+```bash
+docker-compose up --build
+
+```
+
+
+4. **ใช้งาน:** เปิดเบราว์เซอร์ไปที่ `localhost`
+
+**ข้อแนะนำเพิ่มเติมสำหรับ G-A-COWORK:**
+เนื่องจากคุณต้องการให้ "เหนือกว่า" Claude Cowork:
+
+* **เพิ่ม Tool "Visual Analysis":** เนื่องจาก Gemini 2.0 เก่งเรื่องรูปภาพมาก คุณสามารถเขียน Tool ให้ AI แคปหน้าจอหรืออ่านไฟล์ภาพเพื่อมาวิเคราะห์ในลูปได้
+* **Long Context:** ในโค้ด Backend ให้ตั้งค่า `maxOutputTokens` ให้สูง เพื่อให้ Agent สามารถสรุปงานใหญ่ๆ ได้ในครั้งเดียวครับ
+------
+รับทราบครับ เปลี่ยนชื่อจาก G-S-Work เป็น **G-A-COWORK** (Gemini-Agentic Cowork) เรียบร้อย! ชื่อนี้ฟังดูเป็นมืออาชีพและสื่อถึงการทำงานร่วมกับ AI ได้ชัดเจนมากครับ
+
+เพื่อให้คุณเอาไปใช้กับ Copilot หรือพัฒนาต่อได้ทันที ผมสรุปโครงสร้างและไฟล์สำคัญในชื่อใหม่ พร้อมฟีเจอร์จัดการไฟล์ที่คุณต้องการไว้ให้ตรงนี้ครับ:
+
+### 🏗️ โครงสร้างโปรเจกต์ G-A-COWORK
+
+```text
+G-A-COWORK/
+├── backend/
+│   ├── src/
+│   │   ├── tools/
+│   │   │   ├── fileManager.js  <-- (ตัวเด็ด: อ่าน/ย้าย/เปลี่ยนชื่อ)
+│   │   │   ├── webSearch.js
+│   │   │   └── codeRunner.js
+│   │   └── server.js           <-- (Agentic Loop อยู่ที่นี่)
+│   ├── workspace/              <-- (โฟลเดอร์ที่ให้ Agent เข้ามาจัดการไฟล์)
+│   ├── Dockerfile
+│   └── package.json
+├── frontend/
+│   ├── index.html              <-- (Dashboard สำหรับสั่งงานและดู Trace)
+│   └── style.css
+└── docker-compose.yml
+
+```
+
+---
+
+### 📝 Prompt สำหรับให้ Copilot สร้าง "File Management Tool"
+
+คุณสามารถก๊อปปี้ส่วนนี้ไปสั่ง Copilot เพื่อให้ได้โค้ดที่รองรับ Use Case จัดหมวดหมู่ไฟล์ตามโปรเจกต์ครับ:
+
+> **"ช่วยเขียน Node.js Tool สำหรับ G-A-COWORK เพื่อจัดการไฟล์ในระบบ Docker โดยใช้ความสามารถของ Gemini 2.0 Flash ดังนี้:
+> 1. ฟังก์ชัน `list_files(dir)`: ใช้ `fs.readdirSync` เพื่อดูไฟล์ใน `/app/workspace/inbound`
+> 2. ฟังก์ชัน `read_document(path)`: ใช้ `pdf-parse` สำหรับ PDF และ `mammoth` สำหรับ Docx เพื่อดึงข้อความออกมาให้ AI วิเคราะห์
+> 3. ฟังก์ชัน `organize_project_file(oldPath, projectName, docType, newFileName)`:
+> * สร้างโครงสร้างโฟลเดอร์อัตโนมัติ: `/app/workspace/projects/{projectName}/{docType}/`
+> * เปลี่ยนชื่อไฟล์ใหม่โดยใส่ Prefix: `[ {projectName} ] {newFileName}`
+> * ย้ายไฟล์จากจุดเดิมไปที่โฟลเดอร์ใหม่
+> ทั้งหมดนี้ต้องเขียนในรูปแบบ Function Declaration ที่ Gemini เข้าใจได้ (JSON Schema)"**
+> 
+> 
+> 
+> 
+
+---
+
+### 🚀 ขั้นตอนการรัน G-A-COWORK (Windows/Mac)
+
+เมื่อคุณได้โค้ดจาก Copilot แล้ว ให้ทำตามนี้:
+
+1. **สร้างไฟล์ `.env`:** ใส่ `GEMINI_API_KEY=your_key` และ `TAVILY_API_KEY=your_key`
+2. **Docker Build:** เปิด Terminal แล้วรัน:
+```bash
+docker-compose up --build
+
+```
+
+
+3. **สั่งงาน (Input):** พิมพ์สั่งในหน้าเว็บว่า:
+> *"ช่วยเข้าไปดูไฟล์ในโฟลเดอร์ inbound ถ้าเจอไฟล์เกี่ยวกับโครงการ Alpha ให้ย้ายไปเก็บในโฟลเดอร์โครงการตามประเภทเอกสาร และตั้งชื่อใหม่ให้สื่อความหมาย โดยมี prefix [Alpha] นำหน้าด้วย"*
+
+
+
+**ความเหนือกว่าของ G-A-COWORK:**
+
+* **ไม่ต้องเดาชื่อไฟล์:** เพราะ Agent จะ "เปิดอ่าน" เนื้อหาข้างในก่อนตัดสินใจ
+* **ฉลาดกว่า Regex:** แม้ชื่อไฟล์เดิมจะอ่านไม่รู้เรื่อง แต่ถ้าเนื้อหาข้างในระบุว่าเป็น "ใบเสนอราคาของบริษัท A" ตัว G-A-COWORK จะรู้ทันทีว่าต้องย้ายไปไหน
+
+------------------------
+
+
+Prompt นี้จะสั่งให้ AI สร้างทั้ง **Backend (Node.js), Frontend (Tailwind/Lucide), Docker** และ **Logic ของ Agent** ที่ฉลาดพอจะจัดการไฟล์ตามที่คุณต้องการครับ
+
+---
+
+### 🚀 Master Prompt สำหรับ Copilot (Copy ส่วนนี้ได้เลย)
+
+**Role:** You are an expert Full-stack Developer and AI Engineer.
+**Project:** Build an Agentic AI Workspace named **"G-A-COWORK"**.
+
+**Tech Stack:**
+
+* **Backend:** Node.js (Express), Google Generative AI SDK (Gemini 2.0 Flash).
+* **Frontend:** Single Page HTML (use the design from `agentic-ai-workspace.html`), Tailwind CSS, Lucide Icons.
+* **Environment:** Docker & Docker Compose.
+* **Tools:** `pdf-parse` (for PDF), `mammoth` (for Docx), `tavily-client` (for Web Search).
+
+**Requirements:**
+
+1. **Agentic Loop:** Implement a robust `while` loop in the backend that handles Gemini's `functionCalls`. The agent must be able to call multiple tools in sequence until the task is finished.
+2. **File Management System (Crucial):**
+* Create a `/workspace` directory mapped via Docker volume.
+* Tool `list_files`: List all files in `/workspace/inbound`.
+* Tool `read_document`: Extract text from PDF, Docx, or TXT.
+* Tool `organize_file`:
+* Input: `oldPath`, `projectName`, `docType`, `newFileName`.
+* Logic: Create folder `/workspace/projects/{projectName}/{docType}/` if it doesn't exist.
+* Action: Rename file to `[{projectName}] {newFileName}` and move it to the new folder.
+
+
+
+
+3. **Trace Visibility:** The frontend must display every step of the "Thinking Process" (e.g., "AI is reading scan_01.pdf...", "AI identified this as Project Alpha Invoice").
+4. **Dockerization:** - Provide a `Dockerfile` for the backend.
+* Provide a `docker-compose.yml` that sets up the Backend, a simple Nginx Frontend, and the `/workspace` volume.
+
+
+
+**Files to Generate:**
+
+1. `backend/package.json` (with dependencies: `@google/generative-ai`, `express`, `pdf-parse`, `mammoth`, `dotenv`, `cors`).
+2. `backend/server.js` (The heart of G-A-COWORK with the Agentic Loop).
+3. `backend/tools.js` (Definition and logic for all tools).
+4. `docker-compose.yml`.
+5. `.env.example` (Fields: `GEMINI_API_KEY`, `TAVILY_API_KEY`).
+
+---
+
+### 💡 คำแนะนำเพิ่มเติมสำหรับคุณ (Before running):
+
+1. **สร้าง Folder รอไว้:** สร้างโฟลเดอร์หลักชื่อ `G-A-COWORK` แล้วข้างในสร้างโฟลเดอร์ `workspace/inbound` ไว้ด้วย
+2. **ไฟล์ทดสอบ:** ลองเอาไฟล์ PDF หรือ Docx ที่มีชื่อโปรเจกต์อยู่ข้างใน ไปใส่ไว้ใน `workspace/inbound` เพื่อให้ Agent ลอง "อ่าน" และ "ย้าย"
+3. **การรัน:** เมื่อได้โค้ดครบแล้ว ให้ใช้คำสั่ง:
+```bash
+docker-compose up --build
+
+```
+
+
+
+**G-A-COWORK** ตัวนี้จะต่างจากตัวเดิมตรงที่มันมี **"มือ" (Tools)** ที่ทำงานกับไฟล์ในเครื่องคุณได้จริงๆ ไม่ใช่แค่การตอบแชทครับ!
+
+ถ้า Copilot เจนโค้ดส่วนไหนมาไม่ครบ หรืออยากให้ผมช่วยขยายความ Code ในไฟล์ `server.js` ส่วนที่เป็น **Agentic Loop** (หัวใจหลัก) บอกได้เลยนะครับ!
+
+
+

@@ -1,0 +1,14 @@
+SERVICE AGREEMENT - PROJECT BETA
+Document ID: CTR-BETA-2025-V2
+Status: Final Review
+
+Parties:
+1. G-A-COWORK Systems (Provider)
+2. Beta Integration Co., Ltd (Client)
+
+Subject: CRM Integration and Database Migration for Project Beta.
+Timeline: March 1 - May 30, 2025.
+Payment: THB 500,000 upon completion of Module 1.
+
+Signed: ____________________
+Date: March 1, 2025

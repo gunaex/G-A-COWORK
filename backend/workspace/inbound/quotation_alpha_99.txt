@@ -1,0 +1,13 @@
+QUOTATION: QN-ALPHA-099
+Project: Project Alpha (Smart Factory)
+Date: Feb 28, 2025
+To: Client Management
+
+Description:
+- IoT Edge Sensors (50 units) - $15,000
+- AI Dashboard Integration - $10,000
+- 1 Year Maintenance - $5,000
+
+Total: $30,000
+Validity: 30 Days
+Contact: sales@alphacorp.io

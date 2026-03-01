@@ -1,0 +1,112 @@
+
+Building agentic AI like Claude
+Shared by Kan
+This is a copy of a chat between Claude and Kan. Content may include unverified or unsafe content that do not represent the views of Anthropic. Shared snapshot may contain attachments and data not displayed here.
+
+can we create agentic ai similar as claude co work
+
+25 Feb
+
+Check frontend design skill
+Check frontend design skill
+Yes! We can absolutely build an agentic AI desktop/task automation tool similar to Claude's Cowork feature — powered by the Anthropic API. Let me build you a polished prototype.
+
+
+Created a file, read a file
+Created a file, read a file
+Yes! Here's your AgentOS — a working agentic AI workspace similar to Claude Cowork. Here's what it does:
+
+How it works:
+
+Enter your Anthropic API key in the sidebar
+Type a task (or click a quick-start template)
+Hit Run Agent — it runs a real multi-step agentic loop using Claude's API with tool use
+Features built in:
+
+🔄 Agentic loop — Claude calls tools, gets results, reasons about them, and keeps going until the task is done
+🔧 Tool definitions — Web Search, Code Execution, File Read/Write (wired up to the API; results simulated client-side since there's no backend)
+💭 Live trace view — Watch every reasoning step, tool call, and result in real time
+📊 Metrics — Steps taken, tokens used, elapsed time
+🗂️ Tool toggles — Enable/disable available tools
+To make it fully functional (real tool execution), you'd connect it to a backend server that handles actual web search (e.g. Tavily API), code execution (sandboxed environment), and file system access. The agentic loop itself is already real — it's calling Claude's API with proper multi-turn tool use.
+
+please modify to  use google gemini api for this agentic ai
+
+25 Feb
+
+Read the existing file to modify it
+Read the existing file to modify it
+Now I'll rewrite the JavaScript section to use Google Gemini API with its function calling format, and update relevant labels.
+
+
+Edited 5 files
+Edited 5 files
+Now replace the entire <script> block with the Gemini-compatible agentic loop:
+
+
+Replace entire script block with Gemini API implementation
+Replace entire script block with Gemini API implementation
+Now update the tool list in the sidebar to add the calculate tool that's now in the Gemini tool definitions:
+
+
+Edited a file, read a file
+Edited a file, read a file
+Done! The app is now fully wired to the Google Gemini API. Here's what changed:
+
+API & Model:
+
+Calls https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
+API key field now expects your AIza... Google AI Studio key
+Color theme updated to Google's blue/green palette
+Gemini-specific agentic loop:
+
+Tools use Gemini's functionDeclarations format (not Anthropic's input_schema)
+Conversation history uses Gemini's {role, parts:[]} structure (model instead of assistant)
+Function call results are sent back as functionResponse parts in a user turn — exactly how Gemini expects them
+finishReason: STOP signals task completion (vs Anthropic's stop_reason: end_turn)
+Token tracking uses usageMetadata.promptTokenCount + candidatesTokenCount
+New tool added: 🧮 Calculator — evaluates math expressions directly in-browser (no simulation needed).
+
+To get your free Gemini API key: Go to aistudio.google.com → Get API key.
+
+Turn on web search in Search and tools menu. Otherwise, links provided may not be accurate or up to date.
+
+To make it fully functional (real tool execution), you'd connect it to a backend server that handles actual web search (e.g. Tavily API), code execution (sandboxed environment), and file system access. The agentic loop itself is already real 
+
+please explain more information  and please provide step by step to make it fully function in thai lang.
+
+25 Feb
+
+Check docx skill
+Check docx skill
+Good, now I have the skill. Let me create a comprehensive Thai-language guide as a Word document.
+
+
+Ran 3 commands, created a file, read a file
+Ran 3 commands, created a file, read a file
+นี่คือคู่มือภาษาไทยแบบครบถ้วนในรูปแบบ Word Document ครับ! ภายในมีเนื้อหาดังนี้:
+
+📋 สรุปเนื้อหาในคู่มือ:
+
+ส่วนที่ 1 — ภาพรวม อธิบาย Agentic Loop ทำงานอย่างไร และส่วนประกอบหลักทั้งหมด
+
+ส่วนที่ 2 — สถาปัตยกรรม แสดง 3 ชั้นหลัก: Frontend → Backend Server → External Services และอธิบายว่าทำไมต้องมี Backend
+
+ส่วนที่ 3 — การเตรียมตัว รายการ Software และ API Keys ที่ต้องได้รับ (Gemini + Tavily)
+
+ส่วนที่ 4 — Step-by-Step (8 ขั้นตอน):
+
+สร้างโครงสร้างโปรเจกต์
+ตั้งค่า .env (API Keys)
+สร้าง Tool: Web Search ด้วย Tavily API
+สร้าง Tool: Code Runner ด้วย vm2 (Sandbox)
+สร้าง Tool: File System (ปลอดภัย)
+สร้าง Backend Server หลัก (Express.js)
+แก้ Frontend ให้เรียกผ่าน Backend จริง
+ทดสอบและรันระบบ
+ส่วนที่ 5 — Troubleshooting ปัญหาที่พบบ่อยและวิธีแก้ 6 ข้อ
+
+ส่วนที่ 6 — Advanced Docker sandbox, Vector Database, Logging
+
+ส่วนสุดท้าย — Checklist ตรวจสอบครบทุกขั้นตอนก่อน Deploy 🎯
+

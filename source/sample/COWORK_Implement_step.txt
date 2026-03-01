@@ -1,0 +1,109 @@
+To test the G-A-COWORK PRO project, follow these step-by-step instructions. I have designed these tests to verify every core feature: The Agentic Loop, HITL Security Gate, Telegram Remote, and File Management.
+
+🛠️ Step 1: Prepare the Environment
+Ensure your .env file in the root directory contains the necessary keys:
+
+Open d:\git\G-A-COWORK\.env (copy from 
+
+.env.example
+ if not already done).
+Add your GEMINI_API_KEY.
+(Optional) Add TAVILY_API_KEY for web search.
+(Optional) Add TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID.
+🚀 Step 2: Start the Backend
+Open a terminal and run:
+
+powershell
+cd d:\git\G-A-COWORK\backend
+npm install
+npm start
+Check for the message: G-A-COWORK PRO running on port 3000.
+
+💻 Step 3: Open the Dashboard
+Open 
+
+…\git\G-A-COWORK\frontend\index.html
+ in your browser.
+Enter your Gemini API Key in the sidebar.
+Check the top-right corner; it should show Online (Green).
+🧪 Step 4: Run the Standard Test Cases
+Test 1: Smart File Librarian (The Core Demo)
+This tests File Management, Document Reading, and Organized AI Logic.
+
+Place a sample file (e.g., 
+
+report_feb2025.txt
+ which I created earlier) in d:\git\G-A-COWORK\backend\workspace\inbound\.
+In the Dashboard, enter the task:
+"ตรวจสอบไฟล์ใน inbound ทั้งหมด อ่านเนื้อหาแล้วย้ายเข้าแฟ้มแยกตามชื่อโปรเจกต์ (เช่น Alpha หรือ Beta) ในแฟ้ม projects"
+
+Watch the Trace: You will see the agent list files, read their content, and then call organize_file.
+Test 2: HITL Security Gate (Web & Telegram)
+This tests the "Human-in-the-loop" blocking feature.
+
+On the Sidebar, turn ON "🛡️ HITL Protection".
+(Optional) Turn ON "🔔 Telegram Notifications".
+Run the same file organization task again.
+The Result: The agent will pause. You will see an Approval Modal on your dashboard (and a message on your phone if Telegram is set up).
+Click ✅ Allow to let it finish.
+Test 3: Web Search & Code Sandbox
+This tests external tools and the JS engine.
+
+Enter the task:
+"ช่วยหาข่าวราคา Bitcoin วันนี้ล่าสุด และเขียนโค้ด JS คำนวณกำไรถ้าเราซื้อที่ราคา $40,000 พร้อมสรุปเป็นภาษาไทย"
+
+The Result: The agent will use web_search for the price and execute_code for the math.
+Test 4: Operational Memory
+This tests the Activity Log tool.
+
+After completing a few tasks, ask the agent:
+"วันนี้คุณช่วยผมย้ายไฟล์กี่ไฟล์แล้ว และชื่อโปรเจกต์อะไรบ้าง?"
+
+The Result: The agent will call read_activity_log, analyze the log file, and give you a summary report based on its "memory".
+📂 Workspace Verification
+After the tests, check your filesystem:
+
+Organized Files: Check d:\git\G-A-COWORK\workspace\projects\ to see the folders/files created by the AI.
+Audit Logs: Open d:\git\G-A-COWORK\workspace\activity.log to see the JSON record of every action.
+Would you like me to generate more sample documents for your test or help with a specific Telegram issue?
+
+
+-------------
+
+I have generated 4 new sample documents in your inbound folder to provide a more robust test for G-A-COWORK PRO.
+
+📂 New Test Files Created:
+Project Alpha: 
+
+quotation_alpha_99.txt
+ (IoT Smart Factory Quote)
+Project Beta: 
+
+contract_beta_v2.txt
+ (CRM Integration Service Agreement)
+Project Gamma: 
+
+meeting_notes_gamma.txt
+ (Project Kick-off Minutes)
+Project Delta: 
+
+invoice_delta_102.txt
+ (Data Analytics Invoice)
+🚀 Recommended Test Task:
+You can now run a Mass Organization Task to see how the agent handles multiple project identification and categorization:
+
+Prompt to G-A-COWORK:
+
+"ช่วยจัดระเบียบไฟล์ทั้งหมดใน inbound โดยอ่านเนื้อหาข้างในเพื่อวิเคราะห์ว่าเป็นของ Project ไหน (Alpha, Beta, Gamma, หรือ Delta) แล้วย้ายไฟล์ไปไว้ในแฟ้มโครงการที่ถูกต้องใน projects/ หมวดหมู่ตามประเภทเอกสาร พร้อมตั้งชื่อใหม่ให้เป็นระเบียบสุดๆ เลยครับ"
+
+🛡️ Why these files are good for testing:
+Keyword Variation: The AI must look for project names like "Alpha", "Project Gamma", etc., buried in the text.
+Categorization: It will need to identify the Document Type (Quotation, Contract, Meeting Notes, Invoice) to create subfolders like projects/Alpha/Quotations/.
+Batch Processing: This will trigger multiple organize_file tool calls, allowing you to test Multi-Approval via Telegram or your dashboard.
+I am ready for any other tasks! Would you like to try executing these tests now?
+
+
+
+
+rebuild command
+docker-compose up --build
