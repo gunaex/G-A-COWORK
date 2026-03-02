@@ -227,17 +227,22 @@ app.post('/chat/stream', async (req, res) => {
         generationConfig
     });
 
-    // Robust History Mapping: Ensure alternating roles (User, Model)
+    // Robust History Mapping: Handle user, model, and function roles correctly
     const processedHistory = [];
     if (history && history.length > 0) {
         history.forEach(turn => {
-            const role = turn.role === 'model' ? 'model' : 'user';
-            const lastTurn = processedHistory[processedHistory.length - 1];
+            let role = turn.role;
+            if (!['user', 'model', 'function'].includes(role)) role = 'user';
 
+            const lastTurn = processedHistory[processedHistory.length - 1];
             const parts = Array.isArray(turn.parts) ? turn.parts : [{ text: turn.content || turn.parts }];
 
-            if (lastTurn && lastTurn.role === role) {
-                // Merge parts if same role twice in a row
+            // Rules for Merging: 
+            // Avoid merging if anything contains a tool part (functionCall or functionResponse)
+            const hasToolPart = parts.some(p => p.functionCall || p.functionResponse);
+            const lastHasToolPart = lastTurn && lastTurn.parts.some(p => p.functionCall || p.functionResponse);
+
+            if (lastTurn && lastTurn.role === role && !hasToolPart && !lastHasToolPart) {
                 lastTurn.parts.push(...parts);
             } else {
                 processedHistory.push({ role, parts });
@@ -245,8 +250,20 @@ app.post('/chat/stream', async (req, res) => {
         });
     }
 
-    // Token Optimization: Limit history turns (Last 10 turns)
-    const slimHistory = processedHistory.slice(-10);
+    // Token Optimization: Limit history (Last 14 turns)
+    // CRITICAL Gemini Rules:
+    // 1. First message in history MUST be from 'user' role
+    // 2. To send a new 'user' message via sendMessage, the history MUST end with a 'model' turn
+    let slimHistory = processedHistory.slice(-14);
+
+    // Ensure starts with user
+    while (slimHistory.length > 0 && slimHistory[0].role !== 'user') {
+        slimHistory.shift();
+    }
+    // Ensure ends with model (so user can follow up)
+    while (slimHistory.length > 0 && slimHistory[slimHistory.length - 1].role !== 'model') {
+        slimHistory.pop();
+    }
 
     let currentChat = currentModel.startChat({ history: slimHistory });
     const sse = (event, data) => sendEvent(res, event, data);

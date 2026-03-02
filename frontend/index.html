@@ -541,8 +541,8 @@
           stepCount++; updateMetrics();
           addTraceStep('result', `Result: ${data.tool}`, `<pre style="font-size:11px;color:var(--success)">${data.result}</pre>`);
 
-          // Append to history
-          chatHistory.push({ role: 'user', parts: [{ functionResponse: { name: data.tool, response: { output: data.result } } }] });
+          // Append to history as 'function' role
+          chatHistory.push({ role: 'function', parts: [{ functionResponse: { name: data.tool, response: { output: data.result } } }] });
 
           fetchRecentLogs();
           break;
